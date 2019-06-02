@@ -7,6 +7,8 @@ main = do
     Persist.initialise store $ ( [0..9] :: [Int] )
     x0 :: [Int] <- Persist.read store
     putStr "x0" ; print x0
+    x0' :: [Int] <- Persist.read store
+    putStr "x0'" ; print x0'
     x1 :: [Int] <- Persist.get store
     putStr "x1" ; print x1
     Persist.put store $ reverse x1
