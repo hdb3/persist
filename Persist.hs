@@ -1,7 +1,7 @@
 module Persist where
 import System.Environment(getEnv)
 import System.FilePath.Posix((</>))
-import System.Posix.Files(fileExist)
+import System.Posix.Files(fileExist,removeLink)
 import System.Directory(createDirectoryIfMissing)
 import System.IO(withFile,hGetContents,IOMode(ReadMode))
 import Control.DeepSeq
@@ -23,6 +23,11 @@ getStore name = do
         else
             fail "can't open store"
 
+destroy :: String -> IO ()
+destroy name = do
+    path <- getStore name
+    removeLink path
+ 
 initialise :: (Read t, Show t) => String -> t -> IO ()
 initialise name val = do
     home <- getEnv "HOME"
