@@ -3,6 +3,7 @@ module Main where
 import qualified Persist
 import System.Environment(getArgs)
 import Data.IP
+import Data.Word(byteSwap32)
 import Data.Maybe(isJust,fromJust,catMaybes)
 import Data.List((\\),sort,elem)
 import Control.Monad(when,unless)
@@ -38,7 +39,7 @@ init args = do
     let count = readMaybe (args!!1) :: Maybe Int
     unless ( isJust count ) usage
 
-    let pool :: ([IPv4],[IPv4])  = ( map fromHostAddress $ take (fromJust count) $ [toHostAddress (fromJust startAddress) .. ] , [])
+    let pool :: ([IPv4],[IPv4])  = ( map (fromHostAddress . byteSwap32) $ take (fromJust count) $ [byteSwap32 $ toHostAddress (fromJust startAddress) .. ] , [])
     Persist.initialise store pool
     putStrLn "address range initialised"
     
