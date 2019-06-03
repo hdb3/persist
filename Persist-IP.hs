@@ -7,6 +7,7 @@ import Data.Maybe(isJust,fromJust,catMaybes)
 import Data.List((\\),sort,elem)
 import Control.Monad(when,unless)
 import Text.Read(readMaybe)
+import System.Exit(die)
 
 store = "IP"
 main = do
@@ -16,16 +17,19 @@ main = do
             usage
         else
             case head args of
-                "init" -> Main.init (tail args)
+                "init"    -> Main.init (tail args)
                 "release" -> release (tail args)
                 "acquire" -> acquire (tail args)
                 "destroy" -> Persist.destroy store
+                "show"    -> display
+                _         -> usage
 
-usage = do
-    putStrLn "ipstore init <start address> <pool size>"
-    putStrLn "ipstore acquire <count>"
-    putStrLn "ipstore release <address> <address> ..."
-    putStrLn "ipstore destroy"
+usage = die $ unlines [ "ipstore init <start address> <pool size>"
+                      , "ipstore acquire <count>"
+                      , "ipstore release <address> <address> ..."
+                      , "ipstore show"
+                      , "ipstore destroy"
+                      ]
 
 init args = do
     unless ( 2 == length args ) usage
@@ -38,6 +42,10 @@ init args = do
     Persist.initialise store pool
     putStrLn "address range initialised"
     
+display = do
+    (free,used)  :: ([IPv4],[IPv4]) <- Persist.read store
+    print (free,used)
+    
 acquire args = do
     when (null args) usage
     let count = readMaybe (head args) :: Maybe Int
@@ -45,10 +53,11 @@ acquire args = do
     (free,used)  :: ([IPv4],[IPv4]) <- Persist.read store
     if (fromJust count) > length free
         then
-            putStrLn "acquire fail: not enough IPs in pool"
+            die "acquire fail: not enough IPs in pool"
         else do
             let acquiredIPs = take (fromJust count) free
             Persist.put store ( sort $ free \\ acquiredIPs , sort $ used ++ acquiredIPs)
+            putStrLn $ unwords $ map show acquiredIPs
     
 release args = do
     when (null args) usage
@@ -59,7 +68,7 @@ release args = do
         then
             Persist.put store ( sort $ free ++ releasedIPs , sort $ used \\ releasedIPs)
         else
-            putStrLn "release fail: IPs were not in use"
+            die "release fail: IPs were not in use"
     where
         isSubsetOf [] _ = True
-        isSubsetof (a:ax) super = a `elem` super && ax `isSubsetOf` super 
+        isSubsetOf (a:ax) super = a `elem` super && ax `isSubsetOf` super 
